@@ -109,10 +109,18 @@ SoftwareSerial ss(RXPin, TXPin);  // The serial connection to the GPS device
                 
                 SPI.begin();               // Init SPI bus
                 mfrc522.PCD_Init();        // Init MFRC522 card
-                ss.begin(GPSBaud);         //GPS 
+              
                 
                 lcd.print("Starting System");
-             
+                
+              esp8266.begin(9600);       ///wifi serial
+              //Setup Wifi Module
+              sendCommand("AT",5,"OK");
+              sendCommand("AT+CWMODE=1",5,"OK");
+              sendCommand("AT+CWJAP=\""+ AP +"\",\""+ PASS +"\"",20,"OK");
+              esp8266.end();
+              
+              ss.begin(GPSBaud);         //GPS 
                 
                 Serial.println(F(" Bus System Ready! "));
                 
@@ -153,10 +161,7 @@ SoftwareSerial ss(RXPin, TXPin);  // The serial connection to the GPS device
                           Serial.print("Lattitude:");
                           Serial.println(lattitude,6);
                           
-                        //Setup Wifi Module
-                        sendCommand("AT",5,"OK");
-                        sendCommand("AT+CWMODE=1",5,"OK");
-                        sendCommand("AT+CWJAP=\""+ AP +"\",\""+ PASS +"\"",20,"OK");
+                        
   
                           
                           Serial.print("SendCounter:");
