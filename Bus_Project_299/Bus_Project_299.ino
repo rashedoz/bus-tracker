@@ -125,6 +125,10 @@ SoftwareSerial ss(RXPin, TXPin);  // The serial connection to the GPS device
 
       void loop() {
 
+                  lcd.setCursor(0,0);
+                  lcd.print("Passenger:");
+                  lcd.print(uid_counter);
+
                     /*Get Gps Data in variable*/
                     double longitude;
                     double lattitude;
@@ -134,15 +138,20 @@ SoftwareSerial ss(RXPin, TXPin);  // The serial connection to the GPS device
                     ltt = &lattitude;
                     getGPS(l,ltt); //Get GPS Location
 
-                    Serial.print("Longitude:");
-                    Serial.print(longitude,6);
-                    Serial.print("Lattitude:");
-                    Serial.println(lattitude,6);
+                    
 
                     if(sendCounter%100==0){
-                          ss.end();
-                          
+                      
+                          ss.end();       //temporarily close gps serial
                           esp8266.begin(9600);       ///wifi serial
+                          
+                          lcd.clear();
+                          lcd.print("Sending GPS");
+
+                          Serial.print("Longitude:");
+                          Serial.print(longitude,6);
+                          Serial.print("Lattitude:");
+                          Serial.println(lattitude,6);
                           
                         //Setup Wifi Module
                         sendCommand("AT",5,"OK");
@@ -150,17 +159,14 @@ SoftwareSerial ss(RXPin, TXPin);  // The serial connection to the GPS device
                         sendCommand("AT+CWJAP=\""+ AP +"\",\""+ PASS +"\"",20,"OK");
   
                           
-                          lcd.print("Sending GPS");
                           Serial.print("SendCounter:");
                           Serial.println(sendCounter);
                           sendData(lattitude,longitude);
-                          lcd.clear();
                           lcd.print("Sent");
                           lcd.clear();
-  
-                          
-                          esp8266.end();
-                          ss.begin(GPSBaud);         //GPS
+ 
+                          esp8266.end();              //end wifi serial
+                          ss.begin(GPSBaud);         //GPS begin again
                       }
                       
                   sendCounter++;
@@ -309,11 +315,7 @@ SoftwareSerial ss(RXPin, TXPin);  // The serial connection to the GPS device
                    }
                   Serial.print("\n");
                 
-                  //lcd.clear();
-                  lcd.setCursor(0,0);
-                  lcd.print("Passenger:");
-                  lcd.print(uid_counter);
-                
+                  
                   
                   
                   //Serial.println(" ");
@@ -330,16 +332,6 @@ SoftwareSerial ss(RXPin, TXPin);  // The serial connection to the GPS device
 
 
 
-
-
-
-void setupWifi(){
-
-                  //Setup Wifi Module
-                  sendCommand("AT",5,"OK");
-                  sendCommand("AT+CWMODE=1",5,"OK");
-                  sendCommand("AT+CWJAP=\""+ AP +"\",\""+ PASS +"\"",20,"OK");
- }
 
 
 /*Write Data to RFID Sector*/
