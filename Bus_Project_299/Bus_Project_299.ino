@@ -132,10 +132,10 @@ SoftwareSerial ss(RXPin, TXPin);  // The serial connection to the GPS device
     }
 
       void loop() {
-
-                  lcd.setCursor(0,0);
-                  lcd.print("Passenger:");
-                  lcd.print(uid_counter);
+                    lcd.setCursor(0,0);
+                    lcd.print("Passenger:");
+                    lcd.print(uid_counter);
+                 
 
                     /*Get Gps Data in variable*/
                     double longitude;
@@ -148,7 +148,7 @@ SoftwareSerial ss(RXPin, TXPin);  // The serial connection to the GPS device
 
                     
 
-                    if(sendCounter%100==0){
+                    if(sendCounter%700==0){
                       
                           ss.end();       //temporarily close gps serial
                           esp8266.begin(9600);       ///wifi serial
@@ -318,9 +318,12 @@ SoftwareSerial ss(RXPin, TXPin);  // The serial connection to the GPS device
                       Serial.println(passenger_list[i]);
                 
                    }
-                  Serial.print("\n");
+                  Serial.print("Passenger:");
+                  Serial.println(uid_counter);
                 
-                  
+                  lcd.setCursor(0,0);
+                  lcd.print("Passenger:");
+                  lcd.print(uid_counter);
                   
                   
                   //Serial.println(" ");
