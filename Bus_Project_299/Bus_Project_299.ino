@@ -452,8 +452,17 @@ void writeData(int b1, int b2,MFRC522::MIFARE_Key key){
 
 /*    ***Send GPS Data to ThingsSpeak***   */
 void sendData(double lattitude,double longitude){
-    
-     String getData = "GET /update?api_key="+ API +"&"+ field1 +"=" + lattitude +"&"+ field2 +"=" + longitude;
+    String sltt="";
+
+    sltt = String(lattitude,6);
+
+    String slngt="";
+
+    slngt = String(longitude,6);
+   
+      Serial.print("D");
+      Serial.println(sltt);
+     String getData = "GET /update?api_key="+ API +"&"+ field1 +"=" + sltt +"&"+ field2 +"=" + slngt;
      sendCommand("AT+CIPMUX=1",5,"OK");
      sendCommand("AT+CIPSTART=0,\"TCP\",\""+ HOST +"\","+ PORT,15,"OK");
      sendCommand("AT+CIPSEND=0," +String(getData.length()+4),4,">");
