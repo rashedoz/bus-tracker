@@ -4,6 +4,7 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -16,6 +17,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ListAdapter;
 import android.widget.ListView;
@@ -39,6 +41,7 @@ import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 
@@ -91,14 +94,25 @@ public class MapsActivityCurrentPlace extends AppCompatActivity
     // URL to get contacts JSON
     private static String url = "https://api.thingspeak.com/channels/551808/feeds.json?api_key=7LB5IEH1U6NHN8R5&results";
 
-    ArrayList<HashMap<String, String>> contactList;
+    //URL to get Route
+    private static String  distance_api_key = "AIzaSyCc3n1DVDR9RscOuZHMCvpOlwCPhrbdy3M";
+    private static String route_url = "https://maps.googleapis.com/maps/api/distancematrix/json?units=imperial&origins=23.747899,%2090.411388&destinations=23.749195,%2090.412515&key=" + distance_api_key;
+
+    ArrayList<HashMap<String, String>> vehicle_details;
+
     public ArrayList<HashMap<String, String>> llist = new ArrayList<>();
+
+    public Integer last_gps_entry;
+
+
     private ProgressDialog pDialog;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+
 
         // Retrieve location and camera position from saved instance state.
         if (savedInstanceState != null) {
@@ -124,11 +138,9 @@ public class MapsActivityCurrentPlace extends AppCompatActivity
         mapFragment.getMapAsync(this);
 
         //Json data fetch
-        contactList = new ArrayList<>();
+        vehicle_details = new ArrayList<>();
 
         new GetContacts().execute();
-
-
 
 
     }
@@ -230,7 +242,7 @@ public class MapsActivityCurrentPlace extends AppCompatActivity
         Toast toast = Toast.makeText(context, text, duration);
         toast.show();
 
-        Log.i(TAG,contactList.toString());
+        Log.i(TAG,vehicle_details.toString());
 
 
 
@@ -483,15 +495,24 @@ public class MapsActivityCurrentPlace extends AppCompatActivity
                     JSONObject jsonObj = new JSONObject(jsonStr);
 
                     // Getting JSON Array node
-                    JSONArray contacts = jsonObj.getJSONArray("feeds");
+                    JSONArray vehicle_location = jsonObj.getJSONArray("feeds");
 
-                    // looping through All Contacts
-                    for (int i = 0; i < contacts.length(); i++) {
-                        JSONObject c = contacts.getJSONObject(i);
+                    //Get Last Entry ID
+                     last_gps_entry = jsonObj.getJSONObject("channel").getInt("last_entry_id");
+                     last_gps_entry--;
+
+                    String G = last_gps_entry.toString();
+
+                    Log.i(TAG,"LID="+ G);
+
+                    // looping through All feeds
+                    for (int i = 0; i < vehicle_location.length(); i++) {
+                        JSONObject c = vehicle_location.getJSONObject(i);
 
                         String id = c.getString("entry_id");
                         String field1 = c.getString("field1");
                         String field2 = c.getString("field2");
+                        String created_at = c.getString("created_at");
 
                         f1 = field1;
                         f2 = field2;
@@ -504,10 +525,11 @@ public class MapsActivityCurrentPlace extends AppCompatActivity
                         contact.put("id", id);
                         contact.put("field1", field1);
                         contact.put("field2", field2);
+                        contact.put("created_at",created_at);
 
 
                         // adding contact to contact list
-                        contactList.add(contact);
+                        vehicle_details.add(contact);
                     }
                 } catch (final JSONException e) {
                     Log.e(TAG, "Json parsing error: " + e.getMessage());
@@ -550,25 +572,72 @@ public class MapsActivityCurrentPlace extends AppCompatActivity
             /**
              * Updating parsed JSON data into ListView
              * */
-            llist = contactList;
-            Log.i(TAG,llist.get(1).get("field1").toString());
-            Log.i(TAG,llist.get(24).get("field1").toString());
+            //Set Current Passenger text
+
+            ((TextView)findViewById(R.id.t1)).setText("Sora Yuki");
+
+           final Button btn = (Button) findViewById(R.id.b1);
+            btn.setText("DHDHD");
+
+            btn.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Log.i(TAG,"btn-clicked");
+                    Context context = getApplicationContext();
+                    CharSequence text = "Refreshing";
+                    int duration = Toast.LENGTH_SHORT;
+
+                    Toast toast = Toast.makeText(context, text, duration);
+                    toast.show();
+
+                    finish();
+
+                    startActivity(getIntent());
+
+
+                }
+            });
+
+
+
+
+
+
+            llist = vehicle_details;
+            Log.i(TAG,llist.get(last_gps_entry).get("field1").toString());
+            Log.i(TAG,llist.get(last_gps_entry).get("field1").toString());
+            Log.i(TAG,llist.get(last_gps_entry).get("created_at").toString());
 
             //Adding Marker of vehicle from JSON Data
             //Add for loop to add all markers
 
             if (mMap != null) {
-                Log.i(TAG,"Adding Marker at "+ llist.get(24).get("field1") + "latitude="+llist.get(1).get("field2"));
+                Log.i(TAG,"Adding Marker at "+ llist.get(last_gps_entry).get("field1") + "latitude="+llist.get(last_gps_entry).get("field2"));
                 // Add a marker in Sydney, Australia,
                 // and move the map's camera to the same location.
-                double l1 = Double.parseDouble(llist.get(24).get("field1"));
-                double l2 = Double.parseDouble(llist.get(24).get("field2"));
+                double l1 = Double.parseDouble(llist.get(last_gps_entry).get("field1"));
+                double l2 = Double.parseDouble(llist.get(last_gps_entry).get("field2"));
 
-                LatLng sydney = new LatLng(l1, l2);
-                mMap.addMarker(new MarkerOptions().position(sydney)
-                        .title("Vehicle Location").icon(BitmapDescriptorFactory.fromResource(R.drawable.ico)));
+                LatLng bus_position = new LatLng(l1, l2);
+                String vehicle_pos_time = llist.get(last_gps_entry).get("created_at");
+
+                mMap.addMarker(new MarkerOptions().position(bus_position)
+                        .title(vehicle_pos_time).icon(BitmapDescriptorFactory.fromResource(R.drawable.ico)));
 
 
+                //Add route polyline
+                LatLng s = new LatLng(mLastKnownLocation.getLatitude(),mLastKnownLocation.getLongitude());
+
+                mMap.addPolyline(new PolylineOptions().add(
+
+                        new  LatLng(l1, l2),
+                        s
+
+
+                )
+                  .width(10)
+                  .color(Color.RED)
+                );
             }
 
         }
