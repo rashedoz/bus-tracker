@@ -72,7 +72,7 @@ public class MapsActivityCurrentPlace extends AppCompatActivity
     // A default location (Sydney, Australia) and default zoom to use when location permission is
     // not granted.
     private final LatLng mDefaultLocation = new LatLng(-33.8523341, 151.2106085);
-    private static final int DEFAULT_ZOOM = 15;
+    private static final int DEFAULT_ZOOM = 13;
     private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
     private boolean mLocationPermissionGranted;
 
@@ -92,17 +92,18 @@ public class MapsActivityCurrentPlace extends AppCompatActivity
     private LatLng[] mLikelyPlaceLatLngs;
 
     // URL to get contacts JSON
-    private static String url = "https://api.thingspeak.com/channels/551808/feeds.json?api_key=7LB5IEH1U6NHN8R5&results";
+    private static String url = "https://api.thingspeak.com/channels/568103/feeds.json?api_key=YVOKX8T65VORBWY4&results";
 
-    //URL to get Route
-    private static String  distance_api_key = "AIzaSyCc3n1DVDR9RscOuZHMCvpOlwCPhrbdy3M";
-    private static String route_url = "https://maps.googleapis.com/maps/api/distancematrix/json?units=imperial&origins=23.747899,%2090.411388&destinations=23.749195,%2090.412515&key=" + distance_api_key;
 
     ArrayList<HashMap<String, String>> vehicle_details;
 
     public ArrayList<HashMap<String, String>> llist = new ArrayList<>();
 
     public Integer last_gps_entry;
+    public String distance_tobus;
+    public String duration_tobus;
+
+
 
 
     private ProgressDialog pDialog;
@@ -236,7 +237,7 @@ public class MapsActivityCurrentPlace extends AppCompatActivity
         map.moveCamera(CameraUpdateFactory.newLatLng(sydney));*/
 
         Context context = getApplicationContext();
-        CharSequence text = "sd";
+        CharSequence text = "Getting Data";
         int duration = Toast.LENGTH_SHORT;
 
         Toast toast = Toast.makeText(context, text, duration);
@@ -484,7 +485,6 @@ public class MapsActivityCurrentPlace extends AppCompatActivity
             HttpHandler sh = new HttpHandler();
 
 
-
             // Making a request to url and getting response
             String jsonStr = sh.makeServiceCall(url);
 
@@ -509,9 +509,11 @@ public class MapsActivityCurrentPlace extends AppCompatActivity
                     for (int i = 0; i < vehicle_location.length(); i++) {
                         JSONObject c = vehicle_location.getJSONObject(i);
 
+
                         String id = c.getString("entry_id");
                         String field1 = c.getString("field1");
                         String field2 = c.getString("field2");
+                        String field3 = c.getString("field3");
                         String created_at = c.getString("created_at");
 
                         f1 = field1;
@@ -525,6 +527,7 @@ public class MapsActivityCurrentPlace extends AppCompatActivity
                         contact.put("id", id);
                         contact.put("field1", field1);
                         contact.put("field2", field2);
+                        contact.put("field3", field3);
                         contact.put("created_at",created_at);
 
 
@@ -558,6 +561,37 @@ public class MapsActivityCurrentPlace extends AppCompatActivity
 
             }
 
+            /*URL to get Route distance and duration*/
+
+            double l1 = Double.parseDouble(vehicle_details.get(last_gps_entry).get("field1"));
+            double l2 = Double.parseDouble(vehicle_details.get(last_gps_entry).get("field2"));
+            String  distance_api_key = "AIzaSyCc3n1DVDR9RscOuZHMCvpOlwCPhrbdy3M";
+            String route_url = "https://maps.googleapis.com/maps/api/distancematrix/json?units=imperial&origins="+ l1 +"," +l2 + "&destinations="+mLastKnownLocation.getLatitude()+","+mLastKnownLocation.getLongitude()+"&key=" + distance_api_key;
+            Log.i(TAG, "Request  d_url: " + route_url);
+
+            HttpHandler d_t = new HttpHandler();
+            String d_t_jsonStr = d_t.makeServiceCall(route_url);
+            Log.e(TAG, "Response from d_url: " + d_t_jsonStr);
+
+            if(d_t_jsonStr !=null){
+                try {
+                    JSONObject d_t_obj = new JSONObject(d_t_jsonStr);
+                    String distance = d_t_obj.getJSONArray("rows").getJSONObject(0).getJSONArray("elements").getJSONObject(0).getJSONObject("distance").getString("text");
+                    String duration = d_t_obj.getJSONArray("rows").getJSONObject(0).getJSONArray("elements").getJSONObject(0).getJSONObject("duration").getString("text");
+
+                    Log.i(TAG, "Distance: "+distance);
+                    Log.i(TAG, "Duartion: "+duration);
+                    distance_tobus =distance;
+                    duration_tobus = duration;
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+            else {
+                Log.e(TAG, "Couldn't get distance json from server.");
+            }
+
+
             Log.i(TAG,"BackGround Processing");
 
             return null;
@@ -574,10 +608,16 @@ public class MapsActivityCurrentPlace extends AppCompatActivity
              * */
             //Set Current Passenger text
 
-            ((TextView)findViewById(R.id.t1)).setText("Sora Yuki");
+
+
+//
+
+
+
+
 
            final Button btn = (Button) findViewById(R.id.b1);
-            btn.setText("DHDHD");
+            btn.setText("Refresh!");
 
             btn.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -599,14 +639,19 @@ public class MapsActivityCurrentPlace extends AppCompatActivity
             });
 
 
-
-
-
-
             llist = vehicle_details;
             Log.i(TAG,llist.get(last_gps_entry).get("field1").toString());
             Log.i(TAG,llist.get(last_gps_entry).get("field1").toString());
+            Log.i(TAG,llist.get(last_gps_entry).get("field3").toString());
             Log.i(TAG,llist.get(last_gps_entry).get("created_at").toString());
+
+            String passsenger = llist.get(last_gps_entry).get("field3").toString();
+
+            String ds = "Distance= "+distance_tobus+" Duration= "+duration_tobus + "  Passenger= " + passsenger;
+
+            ((TextView)findViewById(R.id.t1)).setText(ds);
+
+
 
             //Adding Marker of vehicle from JSON Data
             //Add for loop to add all markers
@@ -617,6 +662,7 @@ public class MapsActivityCurrentPlace extends AppCompatActivity
                 // and move the map's camera to the same location.
                 double l1 = Double.parseDouble(llist.get(last_gps_entry).get("field1"));
                 double l2 = Double.parseDouble(llist.get(last_gps_entry).get("field2"));
+                //Log.i(TAG,"passenger"+ passenger);
 
                 LatLng bus_position = new LatLng(l1, l2);
                 String vehicle_pos_time = llist.get(last_gps_entry).get("created_at");
@@ -631,14 +677,16 @@ public class MapsActivityCurrentPlace extends AppCompatActivity
                 mMap.addPolyline(new PolylineOptions().add(
 
                         new  LatLng(l1, l2),
-                        new LatLng(23.748846, 90.412546),
                         s
 
 
                 )
                   .width(10)
-                  .color(Color.RED)
+                  .color(Color.GREEN)
                 );
+
+
+
             }
 
         }
