@@ -631,6 +631,7 @@ public class MapsActivityCurrentPlace extends AppCompatActivity
                 mMap.addPolyline(new PolylineOptions().add(
 
                         new  LatLng(l1, l2),
+                        new LatLng(23.748846, 90.412546),
                         s
 
 
