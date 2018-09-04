@@ -84,11 +84,12 @@ MFRC522 mfrc522(SS_PIN, RST_PIN);   // Create MFRC522 instance
 
 String AP = "Walankaa";       // CHANGE ME
 String PASS = "tokyoghoul"; // CHANGE ME
-String API = "RPI7NWXKPYQXEUTR";   // CHANGE Write API Of Channel
+String API = "MH8TSBIRGD8VL85I";   // CHANGE Write API Of Channel
 String HOST = "api.thingspeak.com";
 String PORT = "80";
 String field1 = "field1";   //lattitude
 String field2 = "field2";   //longitude
+String field3 = "field3";  //Passenger
 int countTrueCommand;
 int countTimeCommand; 
 boolean found = false; 
@@ -115,6 +116,7 @@ SoftwareSerial ss(RXPin, TXPin);  // The serial connection to the GPS device
                 
               esp8266.begin(9600);       ///wifi serial
               //Setup Wifi Module
+              delay(10);
               sendCommand("AT",5,"OK");
               sendCommand("AT+CWMODE=1",5,"OK");
               sendCommand("AT+CWJAP=\""+ AP +"\",\""+ PASS +"\"",20,"OK");
@@ -166,7 +168,7 @@ SoftwareSerial ss(RXPin, TXPin);  // The serial connection to the GPS device
                           
                           Serial.print("SendCounter:");
                           Serial.println(sendCounter);
-                          sendData(lattitude,longitude);
+                          sendData(lattitude,longitude,uid_counter);
                           lcd.print("Sent");
                           lcd.clear();
  
@@ -451,7 +453,7 @@ void writeData(int b1, int b2,MFRC522::MIFARE_Key key){
 
 
 /*    ***Send GPS Data to ThingsSpeak***   */
-void sendData(double lattitude,double longitude){
+void sendData(double lattitude,double longitude,int passenger){
     String sltt="";
 
     sltt = String(lattitude,6);
@@ -459,10 +461,12 @@ void sendData(double lattitude,double longitude){
     String slngt="";
 
     slngt = String(longitude,6);
+
+    String plist = String(passenger);
    
       Serial.print("D");
       Serial.println(sltt);
-     String getData = "GET /update?api_key="+ API +"&"+ field1 +"=" + sltt +"&"+ field2 +"=" + slngt;
+     String getData = "GET /update?api_key="+ API +"&"+ field1 +"=" + sltt +"&"+ field2 +"=" + slngt+"&"+ field3 +"="+ plist;
      sendCommand("AT+CIPMUX=1",5,"OK");
      sendCommand("AT+CIPSTART=0,\"TCP\",\""+ HOST +"\","+ PORT,15,"OK");
      sendCommand("AT+CIPSEND=0," +String(getData.length()+4),4,">");
