@@ -46,7 +46,7 @@ Components & Sensors:
 # Android App
 Android Screenshot:
 
-![Screenshot](Pics/app1.png)
+![Screenshot](Pics/app1.png=250x250)
  Android Features:
   - Bus Distance
   - Arrival Time
